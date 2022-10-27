@@ -30,25 +30,25 @@ seed: 13
 tmax: 500
 mag: 100 #magnification factor of reward
 comment: teste  #comment to mark folder name
-LOAD_MODEL: True
+LOAD_MODEL: False
 resume_folder: teste
 model_resume: last
-NEW_BUFFER: False  # Restore a buffer
+NEW_BUFFER: True  # Restore a buffer
 buffer_len: 3000
 
 
 timesteps_per_epoch: 1
 batch_size: 32
-total_steps: 60000
+total_steps: 100000
 
 # init Optimizer
-lr: 0.01
+lr_exp: -3
 # set exploration epsilon
 percentage_of_total_steps: 0.6
 percentage_of_total_steps_resume: 0.6
-start_epsilon: 0.2
+start_epsilon: 1.
 #start_epsilon = 0.1
-end_epsilon: 0.05
+end_epsilon: 0.1
 
 # setup some frequency for logging and updating target network
 loss_freq: 40

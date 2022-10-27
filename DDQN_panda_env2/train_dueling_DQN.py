@@ -116,7 +116,7 @@ total_steps = config['total_steps']
 #total_steps = 10
 
 # init Optimizer
-lr = config['lr']
+lr = 10**config['lr_exp']
 opt = torch.optim.Adam(agent.parameters(), lr=lr)
 
 # set exploration epsilon

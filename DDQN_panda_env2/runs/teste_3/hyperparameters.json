@@ -1,0 +1,1 @@
+{"start_epsilon": 0.2, "end_epsilon": 0.05, "lr": -2, "batch_size": 32, "total_steps": 6000, "percentage_of_total_steps": 0.6, "refresh_target_network_freq": 119, "buffer_len": 19036, "tmax": 500}
