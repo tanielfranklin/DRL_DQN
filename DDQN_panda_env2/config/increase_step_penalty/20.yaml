@@ -1,0 +1,45 @@
+# my configuration file
+state_shape: 3
+delta: 0.02
+RESTORE_AGENT: False  # Restore a trained agent
+NEW_BUFFER: True  # Restore a buffer
+TRAIN: True  # Train or only simulate
+renderize: False  # stop robot viewing
+layer1: 128
+# set a seed
+seed: 13
+# Fill buffer with samples collected ramdomly from environment
+buffer_len: 10000
+#MAximum total_steps per episode
+tmax: 500
+mag: 10
+step_penalty: -20
+
+percentage_of_total_steps: 0.80
+LOAD_MODEL: False
+resume_folder: results_5
+model_resume: best
+percentage_of_total_steps_resume: 0.8
+
+
+
+timesteps_per_epoch: 1
+batch_size: 128
+total_steps: 60000
+
+reset_j1: [-1.7,-1.]
+
+# init Optimizer
+lr: 0.0001
+# set exploration epsilon
+start_epsilon: 1
+#start_epsilon = 0.1
+end_epsilon: 0.05
+
+# setup some frequency for logging and updating target network
+loss_freq: 100
+refresh_target_network_freq: 30
+eval_freq: 2000
+
+# to clip the gradients
+max_grad_norm: 5000
