@@ -19,7 +19,13 @@ if device=='cpu':
 
 # folder to load config file
 
-
+# Function to load yaml configuration file
+def load_config(config_name):
+    CONFIG_PATH = "./config/"
+    
+    with open(os.path.join(CONFIG_PATH, config_name)) as file:
+        config = yaml.safe_load(file)
+    return config
 
 
 config = rbt.load_config("config_dueling.yaml")
@@ -78,11 +84,11 @@ if LOAD_MODEL:
 
 
 if NEW_BUFFER:
-    for i in trange(500,desc="Buffering",ncols=70):
+    for i in trange(buffer_len,desc="Buffering",ncols=70):
 
         state = env.reset()
         # Play 100 runs of experience with 100 steps and  stop if reach 10**4 samples
-        rbt.play_and_record(state, agent, env, exp_replay, n_steps=50)
+        rbt.play_and_record(state, agent, env, exp_replay, n_steps=config["n_steps_buffering"])
 
         if len(exp_replay) == buffer_len:
             break
@@ -206,7 +212,7 @@ for step in trange(total_steps + 1, desc="Training", ncols=70):
         # eval the agent
         assert not np.isnan(loss.cpu().detach().numpy())
         #clear_output(True)        
-        m_reward,m_steps,m_collisions,m_successes,fit,_ = rbt.evaluate(env, agent, n_games=10,
+        m_reward,m_steps,m_collisions,m_successes,fit,_ = rbt.evaluate(env, agent, n_games=config["n_games_eval"],
                                 greedy=True, t_max=tmax)
         tb.add_scalar("1/Mean reward per episode", m_reward, step)
         tb.add_scalar("1/Mean of steps", m_steps, step)
