@@ -15,7 +15,7 @@ sig_R: 0 # importance of pose of end effector
 #j_lim=[(-1.74,1.76),(-3,-0.06),(0,3.75)]
 
 #Reset geral
-reset_j1: [-1.74,1.76] #[-1.7,-1.] 
+reset_j1: [-1.74,1.7] #[-1.7,-1.] 
 reset_j2: [-3,-0.06]
 reset_j3: [0,3.75]
 

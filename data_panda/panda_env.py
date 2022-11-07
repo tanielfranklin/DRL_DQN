@@ -48,6 +48,11 @@ class Panda_RL(object):
         self.sig_R=1.
         
         self.f=np.sum(self.fitness())
+
+    def initial_q():
+        self.reset_j1= [-1.6,-1.6]
+        self.reset_j2= [-2.6,-2.6]
+        self.reset_j3= [0.71,0.71]
         
     def start_scene(self):
         self.scene = swift.Swift()
