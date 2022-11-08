@@ -106,7 +106,7 @@ else:
 
 
 tmax = config["tmax"]
-env.reset_j1 = config["reset_j1"]
+env.reset_q()
 env.mag = config["mag"]
 
 

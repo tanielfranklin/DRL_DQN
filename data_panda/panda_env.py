@@ -31,12 +31,17 @@ class Panda_RL(object):
         self.delta=delta
         self.reach_limits=lambda q,j_lim: True if (q<j_lim[0] or q>j_lim[1]) else False
         self.ceil=False #activate ceil obstacle
+
+        # q init
+        self.q_start=[0., -1.6, 0.,-2.6, 0., 0.71, 0.]
         
         #End joints positions
         j=[0.35, -0.84,  3.69] 
         self.q_goal=[0., j[0], 0.,j[1], 0., j[2], 0.]
         self.set_goal()
         self.fg=0.001 
+
+        self.init_q=True
         
         
 
@@ -49,10 +54,11 @@ class Panda_RL(object):
         
         self.f=np.sum(self.fitness())
 
-    def initial_q():
+    def reset_initial_q(self):
         self.reset_j1= [-1.6,-1.6]
         self.reset_j2= [-2.6,-2.6]
         self.reset_j3= [0.71,0.71]
+        self.init_q=True
         
     def start_scene(self):
         self.scene = swift.Swift()
@@ -75,7 +81,7 @@ class Panda_RL(object):
         
         
     def set_goal(self):
-        self.Tg=self.panda.fkine(self.q_goal)
+        self.Tg=self.panda.fkine(self.q_goal)        
         self.Rg,self.Pg=self.get_RP(self.Tg)
         
     def get_state(self):
@@ -120,24 +126,26 @@ class Panda_RL(object):
         j3=self.reset_j3 #[0.0, 3.7]
         
         collision=True
+
+        if not self.init_q:
         
-        #initial states without collisions
-        while collision:
-            self.panda.q[1]=round(random.uniform(j1[0],j1[1]),2)
-            self.panda.q[3]=round(random.uniform(j2[0],j2[1]),2)
-            self.panda.q[5]=round(random.uniform(j3[0],j3[1]),2)
-            if self.renderize:
-                self.scene.step()
-            collision=self.detect_collision()
+            #initial states without collisions
+            while collision:
+                self.panda.q[1]=round(random.uniform(j1[0],j1[1]),2)
+                self.panda.q[3]=round(random.uniform(j2[0],j2[1]),2)
+                self.panda.q[5]=round(random.uniform(j3[0],j3[1]),2)
+                if self.renderize:
+                    self.scene.step()
+                collision=self.detect_collision()
+
+        else:
+            self.panda.q=self.q_start
+            self.scene.step()
         
         return self.get_state()
         
     def get_position(self):
-        #Get matrix 
-        pos=self.panda.fkine(self.panda.q)
-        #Get position vector
-        pos=np.array(pos)[0:-1,-1]
-        return pos
+        return self.get_current_RP()[1]
     
     def get_q(self):
         #get free active joints
@@ -225,10 +233,8 @@ class Panda_RL(object):
         
 
 
-    def distance(self):
-        self.p_rob=self.get_position()
-        value=np.sum(np.array(self.p_rob-self.Pg)**2)
-        return value
+    def distance(self):   
+        return np.sum(np.array(self.get_position()-self.Pg)**2)
         
     # def render(self, mode='human', close=False):
     # # Render the environment to the screen
