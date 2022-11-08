@@ -39,7 +39,7 @@ class Panda_RL(object):
         j=[0.35, -0.84,  3.69] 
         self.q_goal=[0., j[0], 0.,j[1], 0., j[2], 0.]
         self.set_goal()
-        self.fg=0.001 
+        self.fg=0.01 
 
         self.init_q=True
         

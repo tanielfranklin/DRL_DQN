@@ -233,9 +233,9 @@ class DuelingDQNAgent(nn.Module):
             action = qvalues.argmax(axis=-1)[0]
             s, r, done, info = env.step(self.actions_space[action])
             rewards.append(r)
-            distance.append(env.distance())
+            distance.append(sum(env.fitness()))
 
-            if env.distance() < dist:
+            if sum(env.fitness()) < dist:
                 dist = distance[-1]
 
             if done or info[1] == "Collided":

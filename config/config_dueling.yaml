@@ -2,7 +2,7 @@
 state_shape: 3  # active joints
 delta: 0.02 # incremental action step applied to the joints
 RESTORE_AGENT: False  # Restore a trained agent
-fitness: 0.005 # threshold value that defines the sucess of the task
+fitness: 0.05 # threshold value that defines the sucess of the task
 
 TRAIN: True  # Train or only simulate
 renderize: False  # stop robot viewing
@@ -45,11 +45,11 @@ seed: 13
 #MAximum total_steps per episode
 tmax: 270
 mag: 100 #magnification factor of reward
-comment: new  #comment to mark folder name
-LOAD_MODEL: False
-resume_folder: new_18
+comment: new_2  #comment to mark folder name
+LOAD_MODEL: True
+resume_folder: new_2_3
 model_resume: last  #among last, best (best rewards) and other (lowest TD loss)
-NEW_BUFFER: True  # Restore a buffer
+NEW_BUFFER: False  # Restore a buffer
 buffer_len: 30000
 n_games_eval: 5 # number of games used to evaluate policy
 n_steps_buffering: 270 # number of steps buffering after reset
@@ -70,7 +70,7 @@ end_epsilon: 0.05  #low exploration and max exploitation
 
 # setup some frequency for logging and updating target network
 loss_freq: 40
-refresh_target_network_freq: 20
+refresh_target_network_freq: 40
 eval_freq: 2000
 
 
