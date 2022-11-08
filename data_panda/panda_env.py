@@ -14,6 +14,7 @@ class Panda_RL(object):
     def __init__(self,delta=0.01):
         #creating env elements
         self.panda = rp.models.Panda()
+        self.panda_goal=rp.models.Panda()
         self.obstacle = Cuboid([0.2, 0.2, 0.4], pose=sm.SE3(0.3, 0, 0.2)) 
         self.obstacle2 = Cuboid([0.2, 0.2, 0.3], pose=sm.SE3(0.3, 0, 1.2)) 
         self.obs_floor = Cuboid([2., 2., 0.01], pose=sm.SE3(0, 0, 0), color=[100,100,100,0])#"black") #color=[100,100,100,0]
@@ -67,7 +68,9 @@ class Panda_RL(object):
         self.scene.add(self.obstacle)
         if self.ceil:
             self.scene.add(self.obstacle2)
-        self.scene.add(self.panda, robot_alpha=0.6)
+        self.scene.add(self.panda)
+        self.panda_goal.q=self.q_goal
+        self.scene.add(self.panda_goal, robot_alpha=0.1)
         self.set_end_target(self.q_goal)
         self.render_status=True
         self.renderize=True

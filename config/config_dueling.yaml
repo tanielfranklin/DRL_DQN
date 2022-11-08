@@ -32,6 +32,10 @@ reset_j3: [0,3.75]
 #Reward parameters
 step_penalty: -10
 collision_penalty: -100
+success_rw: 1000
+
+# Activate ceil obstacle
+ceil: True
 
 #DQN layers
 layer1: 256
@@ -43,34 +47,34 @@ seed: 13
 # Fill buffer with samples collected ramdomly from environment
 
 #MAximum total_steps per episode
-tmax: 270
+tmax: 400
 mag: 100 #magnification factor of reward
-comment: new_2  #comment to mark folder name
-LOAD_MODEL: True
-resume_folder: new_2_3
+comment: obs_10  #comment to mark folder name
+LOAD_MODEL: False
+resume_folder: obs_10
 model_resume: last  #among last, best (best rewards) and other (lowest TD loss)
 NEW_BUFFER: False  # Restore a buffer
 buffer_len: 30000
 n_games_eval: 5 # number of games used to evaluate policy
-n_steps_buffering: 270 # number of steps buffering after reset
+n_steps_buffering: 370 # number of steps buffering after reset
 
 
 timesteps_per_epoch: 1 #number of steps in the new policy appended in buffer
 batch_size: 64
-total_steps: 100000 #epochs
+total_steps: 200000 #epochs
 
 # init Optimizer
 lr_exp: -4 # 10**exp learning 
 # set exploration epsilon
 percentage_of_total_steps: 0.5
 percentage_of_total_steps_resume: 0.6
-start_epsilon: 0.2  #high exploration
+start_epsilon: 0.7  #high exploration
 #start_epsilon = 0.1
-end_epsilon: 0.05  #low exploration and max exploitation
+end_epsilon: 0.1  #low exploration and max exploitation
 
 # setup some frequency for logging and updating target network
 loss_freq: 40
-refresh_target_network_freq: 40
+refresh_target_network_freq: 20
 eval_freq: 2000
 
 

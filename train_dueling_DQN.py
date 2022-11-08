@@ -37,6 +37,8 @@ env = rbt.Panda_RL()
 env.renderize = config["renderize"]  # stop robot viewing
 env.delta = config["delta"]
 env.fg = config["fitness"]  # fitness goal
+env.ceil=config['ceil']
+env.bonus_complete=config['success_rw']
 
 agent = rbt.DQNAgent(state_shape, device, epsilon=1).to(device)
 
