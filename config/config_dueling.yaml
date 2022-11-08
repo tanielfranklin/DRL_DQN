@@ -11,7 +11,7 @@ max_grad_norm: 5000
 
 #fitness parameters
 sig_p: 1 # importance of position of end effector
-sig_R: 0 # importance of pose of end effector
+sig_R: 0.1 # importance of pose of end effector
 #j_lim=[(-1.74,1.76),(-3,-0.06),(0,3.75)]
 
 #Reset geral
@@ -30,7 +30,7 @@ reset_j3: [0,3.75]
 
 #[1.4190038033490282e-15, -0.7299999999999993, 1.5000000000000062]
 #Reward parameters
-step_penalty: 0
+step_penalty: -10
 collision_penalty: -100
 
 #DQN layers
@@ -43,26 +43,26 @@ seed: 13
 # Fill buffer with samples collected ramdomly from environment
 
 #MAximum total_steps per episode
-tmax: 500
+tmax: 270
 mag: 100 #magnification factor of reward
 comment: new  #comment to mark folder name
-LOAD_MODEL: True
+LOAD_MODEL: False
 resume_folder: new_18
 model_resume: last  #among last, best (best rewards) and other (lowest TD loss)
-NEW_BUFFER: False  # Restore a buffer
-buffer_len: 15000
+NEW_BUFFER: True  # Restore a buffer
+buffer_len: 30000
 n_games_eval: 5 # number of games used to evaluate policy
-n_steps_buffering: 5 # number of steps buffering after reset
+n_steps_buffering: 270 # number of steps buffering after reset
 
 
 timesteps_per_epoch: 1 #number of steps in the new policy appended in buffer
 batch_size: 64
-total_steps: 200000 #epochs
+total_steps: 100000 #epochs
 
 # init Optimizer
 lr_exp: -4 # 10**exp learning 
 # set exploration epsilon
-percentage_of_total_steps: 0.6
+percentage_of_total_steps: 0.5
 percentage_of_total_steps_resume: 0.6
 start_epsilon: 0.2  #high exploration
 #start_epsilon = 0.1
@@ -70,7 +70,7 @@ end_epsilon: 0.05  #low exploration and max exploitation
 
 # setup some frequency for logging and updating target network
 loss_freq: 40
-refresh_target_network_freq: 200
+refresh_target_network_freq: 20
 eval_freq: 2000
 
 

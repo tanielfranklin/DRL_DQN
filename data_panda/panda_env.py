@@ -140,7 +140,8 @@ class Panda_RL(object):
 
         else:
             self.panda.q=self.q_start
-            self.scene.step()
+            if self.render_status:
+                self.scene.step()
         
         return self.get_state()
         

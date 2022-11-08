@@ -106,7 +106,7 @@ else:
 
 
 tmax = config["tmax"]
-env.reset_q()
+
 env.mag = config["mag"]
 
 
@@ -217,7 +217,7 @@ for step in trange(total_steps + 1, desc="Training", ncols=70):
     if loss < loss_min:
         torch.save(agent.state_dict(), RES_DIR + "/best-model-loss.pt")
         loss_min = loss
-    tb.add_scalar("1/Epsilon", agent.epsilon, step)
+    tb.add_scalar("2/Epsilon", agent.epsilon, step)
     tb.add_scalar("1/TD Loss", loss, step)
 
     if step % refresh_target_network_freq == 0:
@@ -231,11 +231,11 @@ for step in trange(total_steps + 1, desc="Training", ncols=70):
         m_reward, m_steps, m_collisions, m_successes, fit, _ = rbt.evaluate(
             env, agent, n_games=config["n_games_eval"], greedy=True, t_max=tmax
         )
-        tb.add_scalar("1/Mean reward per episode", m_reward, step)
-        tb.add_scalar("1/Mean of steps", m_steps, step)
-        tb.add_scalar("2/Mean fitness reached", fit, step)
-        tb.add_scalar("2/Mean of collisions", m_collisions, step)
-        tb.add_scalar("2/Mean of successes", m_successes, step)
+        tb.add_scalar("1/Rw", m_reward, step)
+        tb.add_scalar("1/steps", m_steps, step)
+        tb.add_scalar("2/fitness reached", fit, step)
+        tb.add_scalar("2/Collisions", m_collisions, step)
+        tb.add_scalar("1/Successes", m_successes, step)
         # print(f"Last mean reward = {m_reward}")
 
     if m_reward > rw_min:
