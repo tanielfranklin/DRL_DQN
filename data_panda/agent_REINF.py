@@ -35,6 +35,57 @@ class REINF(nn.Module):
         qvalues = self.network(state_t)
         return qvalues
 
+    def predict_probs(self,states):
+        """
+        params: states: [batch, state_dim]
+        returns: probs: [batch, n_actions]
+        """
+        states = torch.tensor(states, device=self.device, dtype=torch.float32)
+        with torch.no_grad():
+            logits = self.network(states)
+        probs = nn.functional.softmax(logits, -1).detach().numpy()
+        return probs
+
+    def generate_trajectory(self,env, n_steps=500):
+        """
+        Play a session and genrate a trajectory
+        returns: arrays of states, actions, rewards
+        """
+        states, actions, rewards = [], [], []
+        
+        # initialize the environment
+        s = env.reset()
+        
+        #generate n_steps of trajectory:
+        for t in range(n_steps):
+            action_probs = self.predict_probs(np.array([s]))[0]
+            #sample action based on action_probs
+            a = np.random.choice(self.n_actions, p=action_probs)
+            next_state, r, done, _ = env.step(a)
+            
+            #update arrays
+            states.append(s)
+            actions.append(a)
+            rewards.append(r)
+            
+            s = next_state
+            if done:
+                break
+        
+        return states, actions, rewards
+
+    def get_rewards_to_go(rewards, gamma=0.99):
+        
+        T = len(rewards) # total number of individual rewards
+        # empty array to return the rewards to go
+        rewards_to_go = [0]*T 
+        rewards_to_go[T-1] = rewards[T-1]
+        
+        for i in range(T-2, -1, -1): #go from T-2 to 0
+            rewards_to_go[i] = gamma * rewards_to_go[i+1] + rewards[i]
+        
+        return rewards_to_go
+
 
     def get_qvalues(self, states):
         # input is an array of states in numpy and outout is Qvals as numpy array

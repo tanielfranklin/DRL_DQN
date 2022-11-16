@@ -29,7 +29,7 @@ def load_config(config_name):
     return config
 
 
-config = rbt.load_config("config_dueling.yaml")
+config = rbt.load_config("config_REINF.yaml")
 
 state_shape = config["state_shape"]
 # Environment settings
@@ -164,91 +164,146 @@ def save_hyperparameter(dict, directory):
 
 
 # Start training
-state = env.reset()
-# tb.add_graph(agent.network, torch.tensor(
-#     state, device=device, dtype=torch.float32))
-save_hyperparameter(hyperparameters_train, RES_DIR)
-loss_min = np.inf
-rw_min = -np.inf
-print(f"buffer size = {len(exp_replay)} ")
-print(f"Frequency evaluation = {eval_freq}")
-print(f"Device: {device}")
+#init Optimizer
+optimizer = torch.optim.Adam(agent.network.parameters(), lr=lr)
 
+def train_one_episode(states, actions, rewards, gamma=0.99, entropy_coef=1e-2):
+    
+    
+    # get rewards to go
+    rewards_to_go = agent.get_rewards_to_go(rewards, gamma)
 
-for step in trange(total_steps + 1, desc="Training", ncols=70):
+    # convert numpy array to torch tensors
+    states = torch.tensor(states, device=device, dtype=torch.float)
+    actions = torch.tensor(actions, device=device, dtype=torch.long)
+    rewards_to_go = torch.tensor(rewards_to_go, device=device, dtype=torch.float)
 
-    # reduce exploration with learning progress
-    agent.epsilon = rbt.epsilon_schedule(
-        start_epsilon, end_epsilon, step, eps_decay_final_step
-    )
+    # get action probabilities from states
+    logits = agent.network(states)
+    probs = nn.functional.softmax(logits, -1)
+    log_probs = nn.functional.log_softmax(logits, -1)
+    
+    log_probs_for_actions = log_probs[range(len(actions)), actions]
+    
+    #Compute loss to be minized
+    J = torch.mean(log_probs_for_actions*rewards_to_go)
+    H = -(probs*log_probs).sum(-1).mean()
+    
+    loss = -(J+entropy_coef*H)
 
-    # take timesteps_per_epoch and update experience replay buffer
-    _, state = rbt.play_and_record(state, agent, env, exp_replay, timesteps_per_epoch)
-
-    # train by sampling batch_size of data from experience replay
-    (
-        states,
-        actions,
-        rewards,
-        next_states,
-        done_flags,
-        weights,
-        idxs,
-    ) = exp_replay.sample(batch_size)
-    actions = [agent.get_action_index(i) for i in actions]
-
-    # loss = <compute TD loss>
-    opt.zero_grad()
-    loss = rbt.compute_td_loss_priority_replay(
-        agent,
-        target_network,
-        exp_replay,
-        states,
-        actions,
-        rewards,
-        next_states,
-        done_flags,
-        weights,
-        idxs,
-        gamma=0.99,
-        device=device,
-    )
+    optimizer.zero_grad()
     loss.backward()
-    grad_norm = nn.utils.clip_grad_norm_(agent.parameters(), max_grad_norm)
-    opt.step()
-    if loss < loss_min:
-        torch.save(agent.state_dict(), RES_DIR + "/best-model-loss.pt")
-        loss_min = loss
-    tb.add_scalar("2/Epsilon", agent.epsilon, step)
-    tb.add_scalar("1/TD Loss", loss, step)
+    optimizer.step()
+    
+    return np.sum(rewards) #to show progress on training
 
-    if step % refresh_target_network_freq == 0:
-        # Load agent weights into target_network
-        target_network.load_state_dict(agent.state_dict())
 
-    if step % eval_freq == 0:
-        # eval the agent
-        assert not np.isnan(loss.cpu().detach().numpy())
-        # clear_output(True)
-        m_reward, m_steps, m_collisions, m_successes, fit, _ = rbt.evaluate(
-            env, agent, n_games=config["n_games_eval"], greedy=True, t_max=tmax
-        )
-        tb.add_scalar("1/Rw", m_reward, step)
-        tb.add_scalar("1/steps", m_steps, step)
-        tb.add_scalar("2/fitness reached", fit, step)
-        tb.add_scalar("2/Collisions", m_collisions, step)
-        tb.add_scalar("1/Successes", m_successes, step)
-        # print(f"Last mean reward = {m_reward}")
-
-    if m_reward > rw_min:
-        torch.save(agent.state_dict(), RES_DIR + "/best-model-rw.pt")
-        rw_min = m_reward
-
-    # clear_output(True)
-exp_replay.save_buffer(RES_DIR)
-torch.save(agent.state_dict(), RES_DIR + "/last-model.pt")
+total_rewards = []
+rw_min = -np.inf
+for i in range(10000):
+    states, actions, rewards = agent.generate_trajectory(env)
+    reward = train_one_episode(states, actions, rewards)
+    
+    total_rewards.append(reward)
+    if i != 0 and i % 100 == 0:
+        mean_reward = np.mean(total_rewards[-100:-1])
+        tb.add_scalar("1/reward", mean_reward, i)
+        if mean_reward > rw_min:
+            torch.save(agent.state_dict(), RES_DIR + "/best-model-rw.pt")
+            rw_min = mean_reward
+        #print("mean reward:%.3f" % (mean_reward))
+        # if mean_reward > 300:
+        #     break
 tb.close()
-rbt.eval_trained_models(env, agent, RES_DIR, device)
+
+
+
+
+# state = env.reset()
+# # tb.add_graph(agent.network, torch.tensor(
+# #     state, device=device, dtype=torch.float32))
+# save_hyperparameter(hyperparameters_train, RES_DIR)
+# loss_min = np.inf
+# rw_min = -np.inf
+# print(f"buffer size = {len(exp_replay)} ")
+# print(f"Frequency evaluation = {eval_freq}")
+# print(f"Device: {device}")
+
+
+# for step in trange(total_steps + 1, desc="Training", ncols=70):
+
+#     # reduce exploration with learning progress
+#     agent.epsilon = rbt.epsilon_schedule(
+#         start_epsilon, end_epsilon, step, eps_decay_final_step
+#     )
+
+#     # take timesteps_per_epoch and update experience replay buffer
+#     _, state = rbt.play_and_record(state, agent, env, exp_replay, timesteps_per_epoch)
+
+#     # train by sampling batch_size of data from experience replay
+#     (
+#         states,
+#         actions,
+#         rewards,
+#         next_states,
+#         done_flags,
+#         weights,
+#         idxs,
+#     ) = exp_replay.sample(batch_size)
+#     actions = [agent.get_action_index(i) for i in actions]
+
+#     # loss = <compute TD loss>
+#     opt.zero_grad()
+#     loss = rbt.compute_td_loss_priority_replay(
+#         agent,
+#         target_network,
+#         exp_replay,
+#         states,
+#         actions,
+#         rewards,
+#         next_states,
+#         done_flags,
+#         weights,
+#         idxs,
+#         gamma=0.99,
+#         device=device,
+#     )
+#     loss.backward()
+#     grad_norm = nn.utils.clip_grad_norm_(agent.parameters(), max_grad_norm)
+#     opt.step()
+#     if loss < loss_min:
+#         torch.save(agent.state_dict(), RES_DIR + "/best-model-loss.pt")
+#         loss_min = loss
+#     tb.add_scalar("2/Epsilon", agent.epsilon, step)
+#     tb.add_scalar("1/TD Loss", loss, step)
+
+#     if step % refresh_target_network_freq == 0:
+#         # Load agent weights into target_network
+#         target_network.load_state_dict(agent.state_dict())
+
+#     if step % eval_freq == 0:
+#         # eval the agent
+#         assert not np.isnan(loss.cpu().detach().numpy())
+#         # clear_output(True)
+#         m_reward, m_steps, m_collisions, m_successes, fit, _ = rbt.evaluate(
+#             env, agent, n_games=config["n_games_eval"], greedy=True, t_max=tmax
+#         )
+#         tb.add_scalar("1/Rw", m_reward, step)
+#         tb.add_scalar("1/steps", m_steps, step)
+#         tb.add_scalar("2/fitness reached", fit, step)
+#         tb.add_scalar("2/Collisions", m_collisions, step)
+#         tb.add_scalar("1/Successes", m_successes, step)
+#         # print(f"Last mean reward = {m_reward}")
+
+#     if m_reward > rw_min:
+#         torch.save(agent.state_dict(), RES_DIR + "/best-model-rw.pt")
+#         rw_min = m_reward
+
+#     # clear_output(True)
+# exp_replay.save_buffer(RES_DIR)
+# torch.save(agent.state_dict(), RES_DIR + "/last-model.pt")
+# tb.close()
+# rbt.eval_trained_models(env, agent, RES_DIR, device)
 
 # env.renderize=True
 # q_far=np.array([ 0., -0.8 ,  0. , -0.0698,  0.,  3.3825,  0.    ])

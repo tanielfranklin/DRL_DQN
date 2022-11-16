@@ -49,11 +49,11 @@ seed: 13
 #MAximum total_steps per episode
 tmax: 400
 mag: 100 #magnification factor of reward
-comment: obs_10_12  #comment to mark folder name
+comment: reinf  #comment to mark folder name
 LOAD_MODEL: False
 resume_folder: obs_10_12
 model_resume: last  #among last, best (best rewards) and other (lowest TD loss)
-NEW_BUFFER: False  # Restore a buffer
+NEW_BUFFER: True  # Restore a buffer
 buffer_len: 30000
 n_games_eval: 5 # number of games used to evaluate policy
 n_steps_buffering: 370 # number of steps buffering after reset
@@ -64,7 +64,7 @@ batch_size: 64
 total_steps: 200000 #epochs
 
 # init Optimizer
-lr_exp: -4 # 10**exp learning 
+lr_exp: -3 # 10**exp learning 
 # set exploration epsilon
 percentage_of_total_steps: 0.5
 percentage_of_total_steps_resume: 0.6
