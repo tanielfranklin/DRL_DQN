@@ -213,11 +213,11 @@ class DuelingDQNAgent(nn.Module):
     def play(self, env, NAME_DIR, tmax=500, model="best", q0=[], plot=False):
 
         if model == "last":
-            self.load_state_dict(torch.load('runs/'+NAME_DIR+'/last-model.pt'))
+            self.load_state_dict(torch.load('runs/'+NAME_DIR+'/last-model.pt',map_location=self.device))
         elif model == "best":
-            self.load_state_dict(torch.load('runs/'+NAME_DIR+'/best-model-rw.pt'))
+            self.load_state_dict(torch.load('runs/'+NAME_DIR+'/best-model-rw.pt',map_location=self.device))
         else:
-            self.load_state_dict(torch.load('runs/'+NAME_DIR+'/best-model-loss.pt'))
+            self.load_state_dict(torch.load('runs/'+NAME_DIR+'/best-model-loss.pt',map_location=self.device))
 
         if len(q0) != 7:
             s = env.reset()
