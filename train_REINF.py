@@ -40,26 +40,13 @@ env.fg = config["fitness"]  # fitness goal
 env.ceil=config['ceil']
 env.bonus_complete=config['success_rw']
 
-agent = rbt.DQNAgent(state_shape, device, epsilon=1).to(device)
+agent = rbt.REINF(state_shape, device, epsilon=1).to(device)
 
-# init agent, target network and Optimizer
-agent = rbt.DuelingDQNAgent(
-    state_shape, device, config["dueling_layers"], epsilon=1
-).to(device)
-target_network = rbt.DuelingDQNAgent(
-    state_shape, device, config["dueling_layers"], epsilon=1
-).to(device)
-target_network.load_state_dict(agent.state_dict())
-optimizer = torch.optim.Adam(agent.parameters(), lr=1e-4)
 
 
 RESTORE_AGENT = config["RESTORE_AGENT"]  # Restore a trained agent
 NEW_BUFFER = config["NEW_BUFFER"]  # Restore a buffer
 TRAIN = config["TRAIN"]  # Train or only simulate
-
-
-# agent.n_layer1=config['layer1']
-# agent.n_layer2=config['layer1']*2
 
 env.step_penalty = config["step_penalty"]
 env.collision_penalty = config["collision_penalty"]
@@ -73,9 +60,7 @@ random.seed(seed)
 np.random.seed(seed)
 torch.manual_seed(seed)
 
-# Fill buffer with samples collected ramdomly from environment
-buffer_len = config["buffer_len"]
-exp_replay = rbt.PrioritizedReplayBuffer(buffer_len)
+
 RES_DIR = rbt.set_res_dir(comment=config["comment"])
 comment = ""
 # monitor_tensorboard()
@@ -88,23 +73,6 @@ if LOAD_MODEL:
     percentage_of_total_steps = config["percentage_of_total_steps_resume"]
     print(f"Loaded {folder} {config['model_resume']} ")
     # print(f"Restored  {folder}")
-
-
-if NEW_BUFFER:
-    for i in trange(buffer_len, desc="Buffering", ncols=70):
-
-        state = env.reset()
-        # Play 100 runs of experience with 100 steps and  stop if reach 10**4 samples
-        rbt.play_and_record(
-            state, agent, env, exp_replay, n_steps=config["n_steps_buffering"]
-        )
-
-        if len(exp_replay) == buffer_len:
-            break
-    print(f"New buffer with {len(exp_replay)} samples")
-else:
-    exp_replay = rbt.PrioritizedReplayBuffer(buffer_len)
-    exp_replay.load_buffer(config["resume_folder"])
 
 
 tmax = config["tmax"]
@@ -152,7 +120,6 @@ hyperparameters_train = {
     "total_steps": total_steps,
     "percentage_of_total_steps": percentage_of_total_steps,
     "refresh_target_network_freq": refresh_target_network_freq,
-    "buffer_len": buffer_len,
     "tmax": tmax
     # "agent": str(agent.network)
 }
@@ -167,6 +134,16 @@ def save_hyperparameter(dict, directory):
 #init Optimizer
 optimizer = torch.optim.Adam(agent.network.parameters(), lr=lr)
 
+states=env.reset()
+states = torch.tensor(states, device=device, dtype=torch.float)
+logits = agent.network(states)
+probs = nn.functional.softmax(logits, -1)
+print(logits)
+print(probs)
+log_probs = nn.functional.log_softmax(logits, -1)
+print(log_probs)
+# exit()
+
 def train_one_episode(states, actions, rewards, gamma=0.99, entropy_coef=1e-2):
     
     
@@ -174,7 +151,7 @@ def train_one_episode(states, actions, rewards, gamma=0.99, entropy_coef=1e-2):
     rewards_to_go = agent.get_rewards_to_go(rewards, gamma)
 
     # convert numpy array to torch tensors
-    states = torch.tensor(states, device=device, dtype=torch.float)
+    states = torch.tensor(np.array(states), device=device, dtype=torch.float)
     actions = torch.tensor(actions, device=device, dtype=torch.long)
     rewards_to_go = torch.tensor(rewards_to_go, device=device, dtype=torch.float)
 
@@ -200,18 +177,21 @@ def train_one_episode(states, actions, rewards, gamma=0.99, entropy_coef=1e-2):
 
 total_rewards = []
 rw_min = -np.inf
-for i in range(10000):
-    states, actions, rewards = agent.generate_trajectory(env)
+print(f"Device: {device}")
+
+for i in trange(10000):
+    states, actions, rewards,info = agent.generate_trajectory(env,n_steps=config['tmax'])
     reward = train_one_episode(states, actions, rewards)
     
     total_rewards.append(reward)
     if i != 0 and i % 100 == 0:
         mean_reward = np.mean(total_rewards[-100:-1])
         tb.add_scalar("1/reward", mean_reward, i)
+        torch.save(agent.state_dict(), RES_DIR + "/last-model.pt")
         if mean_reward > rw_min:
             torch.save(agent.state_dict(), RES_DIR + "/best-model-rw.pt")
             rw_min = mean_reward
-        #print("mean reward:%.3f" % (mean_reward))
+        print("mean reward:%.3f" % (mean_reward))
         # if mean_reward > 300:
         #     break
 tb.close()

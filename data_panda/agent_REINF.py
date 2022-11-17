@@ -43,10 +43,12 @@ class REINF(nn.Module):
         states = torch.tensor(states, device=self.device, dtype=torch.float32)
         with torch.no_grad():
             logits = self.network(states)
-        probs = nn.functional.softmax(logits, -1).detach().numpy()
+        probs = nn.functional.softmax(logits, -1).detach().cpu().numpy()
         return probs
 
-    def generate_trajectory(self,env, n_steps=500):
+
+
+    def generate_trajectory(self,env, n_steps=300):
         """
         Play a session and genrate a trajectory
         returns: arrays of states, actions, rewards
@@ -59,9 +61,11 @@ class REINF(nn.Module):
         #generate n_steps of trajectory:
         for t in range(n_steps):
             action_probs = self.predict_probs(np.array([s]))[0]
-            #sample action based on action_probs
+            #sample action index based on action_probs
             a = np.random.choice(self.n_actions, p=action_probs)
-            next_state, r, done, _ = env.step(a)
+            #get action values
+            av = self.actions_space[a]
+            next_state, r, done, info = env.step(av)
             
             #update arrays
             states.append(s)
@@ -69,12 +73,17 @@ class REINF(nn.Module):
             rewards.append(r)
             
             s = next_state
-            if done:
+            
+            if done or info[1] == "Collided":
                 break
-        
-        return states, actions, rewards
+        if info[0] == "Running" and info[0] == "":
+            info[1] = "Truncated"
 
-    def get_rewards_to_go(rewards, gamma=0.99):
+        
+        
+        return states, actions, rewards, info
+
+    def get_rewards_to_go(self,rewards, gamma=0.99):
         
         T = len(rewards) # total number of individual rewards
         # empty array to return the rewards to go

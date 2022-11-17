@@ -47,7 +47,7 @@ seed: 13
 # Fill buffer with samples collected ramdomly from environment
 
 #MAximum total_steps per episode
-tmax: 400
+tmax: 320
 mag: 100 #magnification factor of reward
 comment: reinf  #comment to mark folder name
 LOAD_MODEL: False
