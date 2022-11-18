@@ -2,79 +2,47 @@
 state_shape: 3  # active joints
 delta: 0.02 # incremental action step applied to the joints
 RESTORE_AGENT: False  # Restore a trained agent
-fitness: 0.05 # threshold value that defines the sucess of the task
-
-TRAIN: True  # Train or only simulate
+fitness: 0.005 # threshold value that defines the sucess of the task
 renderize: False  # stop robot viewing
 # to clip the gradients
-max_grad_norm: 5000
+max_grad_norm: 4000
 
 #fitness parameters
-sig_p: 1 # importance of position of end effector
+sig_p: 1.0 # importance of position of end effector
 sig_R: 0.1 # importance of pose of end effector
-#j_lim=[(-1.74,1.76),(-3,-0.06),(0,3.75)]
 
 #Reset geral
 reset_j1: [-1.74,1.7] #[-1.7,-1.] 
 reset_j2: [-3,-0.06]
 reset_j3: [0,3.75]
 
-# # proximo do alvo
-# reset_j1: [-0.3,0.3] #[-1.7,-1.] 
-# reset_j2: [-1,0.06]
-# reset_j3: [0,3.75]
-
-# env.reset_j1= [-0.3,0.3] #[-1.7,-1.] 
-# env.reset_j2= [-1,0.06]
-# env.reset_j3= [0,3.75]
-
-#[1.4190038033490282e-15, -0.7299999999999993, 1.5000000000000062]
 #Reward parameters
-step_penalty: -10
+step_penalty: -30
 collision_penalty: -100
 success_rw: 1000
+mag: 100 #magnification factor of reward
 
 # Activate ceil obstacle
 ceil: True
 
-#DQN layers
-layer1: 256
-
-#Dueling DQN
-dueling_layers: [32,128,32] #or [64,256,64] hidden
 # set a seed
 seed: 13
 # Fill buffer with samples collected ramdomly from environment
 
-#MAximum total_steps per episode
-tmax: 320
-mag: 100 #magnification factor of reward
+#Maximum total_steps per episode
+tmax: 300
+
 comment: reinf  #comment to mark folder name
 LOAD_MODEL: False
 resume_folder: obs_10_12
 model_resume: last  #among last, best (best rewards) and other (lowest TD loss)
-NEW_BUFFER: True  # Restore a buffer
-buffer_len: 30000
-n_games_eval: 5 # number of games used to evaluate policy
-n_steps_buffering: 370 # number of steps buffering after reset
 
-
-timesteps_per_epoch: 1 #number of steps in the new policy appended in buffer
 batch_size: 64
-total_steps: 200000 #epochs
+total_steps: 5000 #epochs
 
 # init Optimizer
 lr_exp: -3 # 10**exp learning 
-# set exploration epsilon
-percentage_of_total_steps: 0.5
-percentage_of_total_steps_resume: 0.6
-start_epsilon: 0.2  #high exploration
-#start_epsilon = 0.1
-end_epsilon: 0.1  #low exploration and max exploitation
-
-# setup some frequency for logging and updating target network
-loss_freq: 40
-refresh_target_network_freq: 20
-eval_freq: 2000
+# setup some frequency for logging 
+eval_freq: 100
 
 

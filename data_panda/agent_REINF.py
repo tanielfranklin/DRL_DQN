@@ -74,10 +74,13 @@ class REINF(nn.Module):
             
             s = next_state
             
-            if done or info[1] == "Collided":
+            if done:
+                info[1] = "Completed"
+                break
+            elif info[1] == "Collided":
                 break
         if info[0] == "Running" and info[0] == "":
-            info[1] = "Truncated"
+            info[1] = f"Truncated in {t} steps"
 
         
         

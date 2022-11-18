@@ -21,6 +21,8 @@ if device == "cpu":
 # folder to load config file
 
 # Function to load yaml configuration file
+
+
 def load_config(config_name):
     CONFIG_PATH = "./config/"
 
@@ -37,16 +39,13 @@ env = rbt.Panda_RL()
 env.renderize = config["renderize"]  # stop robot viewing
 env.delta = config["delta"]
 env.fg = config["fitness"]  # fitness goal
-env.ceil=config['ceil']
-env.bonus_complete=config['success_rw']
+env.ceil = config['ceil']
+env.bonus_complete = config['success_rw']
 
 agent = rbt.REINF(state_shape, device, epsilon=1).to(device)
 
 
-
 RESTORE_AGENT = config["RESTORE_AGENT"]  # Restore a trained agent
-NEW_BUFFER = config["NEW_BUFFER"]  # Restore a buffer
-TRAIN = config["TRAIN"]  # Train or only simulate
 
 env.step_penalty = config["step_penalty"]
 env.collision_penalty = config["collision_penalty"]
@@ -83,12 +82,9 @@ env.mag = config["mag"]
 # monitor_tensorboard()
 tb = SummaryWriter(log_dir=RES_DIR, comment=comment)
 
-percentage_of_total_steps = config["percentage_of_total_steps"]
-
-
 # setup some parameters for training
 
-timesteps_per_epoch = config["timesteps_per_epoch"]
+
 batch_size = config["batch_size"]
 total_steps = config["total_steps"]
 # total_steps = 10
@@ -97,15 +93,8 @@ total_steps = config["total_steps"]
 lr = 10 ** config["lr_exp"]
 opt = torch.optim.Adam(agent.parameters(), lr=lr)
 
-# set exploration epsilon
-start_epsilon = config["start_epsilon"]
-# start_epsilon = 0.1
-end_epsilon = config["end_epsilon"]
-eps_decay_final_step = percentage_of_total_steps * total_steps
 
 # setup some frequency for logging and updating target network
-loss_freq = config["loss_freq"]
-refresh_target_network_freq = config["refresh_target_network_freq"]
 eval_freq = config["eval_freq"]
 
 # to clip the gradients
@@ -113,13 +102,9 @@ max_grad_norm = config["max_grad_norm"]
 
 
 hyperparameters_train = {
-    "start_epsilon": start_epsilon,
-    "end_epsilon": end_epsilon,
     "lr": lr,
     "batch_size": batch_size,
     "total_steps": total_steps,
-    "percentage_of_total_steps": percentage_of_total_steps,
-    "refresh_target_network_freq": refresh_target_network_freq,
     "tmax": tmax
     # "agent": str(agent.network)
 }
@@ -131,62 +116,75 @@ def save_hyperparameter(dict, directory):
 
 
 # Start training
-#init Optimizer
+# init Optimizer
 optimizer = torch.optim.Adam(agent.network.parameters(), lr=lr)
 
-states=env.reset()
-states = torch.tensor(states, device=device, dtype=torch.float)
-logits = agent.network(states)
-probs = nn.functional.softmax(logits, -1)
-print(logits)
-print(probs)
-log_probs = nn.functional.log_softmax(logits, -1)
-print(log_probs)
-# exit()
+states = env.reset()
+
 
 def train_one_episode(states, actions, rewards, gamma=0.99, entropy_coef=1e-2):
-    
-    
+
     # get rewards to go
     rewards_to_go = agent.get_rewards_to_go(rewards, gamma)
 
     # convert numpy array to torch tensors
     states = torch.tensor(np.array(states), device=device, dtype=torch.float)
     actions = torch.tensor(actions, device=device, dtype=torch.long)
-    rewards_to_go = torch.tensor(rewards_to_go, device=device, dtype=torch.float)
+    rewards_to_go = torch.tensor(
+        rewards_to_go, device=device, dtype=torch.float)
 
     # get action probabilities from states
     logits = agent.network(states)
     probs = nn.functional.softmax(logits, -1)
     log_probs = nn.functional.log_softmax(logits, -1)
-    
+
     log_probs_for_actions = log_probs[range(len(actions)), actions]
-    
-    #Compute loss to be minized
+
+    # Compute loss to be minized
     J = torch.mean(log_probs_for_actions*rewards_to_go)
     H = -(probs*log_probs).sum(-1).mean()
-    
+
     loss = -(J+entropy_coef*H)
 
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
-    
-    return np.sum(rewards) #to show progress on training
+
+    return np.sum(rewards)  # to show progress on training
 
 
 total_rewards = []
 rw_min = -np.inf
 print(f"Device: {device}")
+print(f"Ceil: {env.ceil}")
+success = 0
+collisions = 0
+rw=[]
 
-for i in trange(10000):
-    states, actions, rewards,info = agent.generate_trajectory(env,n_steps=config['tmax'])
-    reward = train_one_episode(states, actions, rewards)
+for i in trange(config["total_steps"]):
+
     
-    total_rewards.append(reward)
-    if i != 0 and i % 100 == 0:
-        mean_reward = np.mean(total_rewards[-100:-1])
-        tb.add_scalar("1/reward", mean_reward, i)
+    states, actions, rewards, info = agent.generate_trajectory(
+        env, n_steps=config['tmax'])
+    reward = train_one_episode(states, actions, rewards)
+    #total_rewards.append(reward)
+    rw.append(np.sum(rewards))
+
+    if info[1] == "Completed":
+        success += 1
+    elif info[1] == "Collided":
+        collisions += 1
+
+    if i % config["eval_freq"] == 0:
+        mean_reward = np.mean(rw)
+        tb.add_scalar("1/reward", mean_reward,i)
+        tb.add_scalar("1/success", success/config["eval_freq"], i)
+        tb.add_scalar("1/collisions", collisions/config["eval_freq"], i)
+        #reset
+        rw=[]
+        
+        success = 0
+        collisions = 0
         torch.save(agent.state_dict(), RES_DIR + "/last-model.pt")
         if mean_reward > rw_min:
             torch.save(agent.state_dict(), RES_DIR + "/best-model-rw.pt")
@@ -195,8 +193,6 @@ for i in trange(10000):
         # if mean_reward > 300:
         #     break
 tb.close()
-
-
 
 
 # state = env.reset()
