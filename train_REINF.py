@@ -11,6 +11,8 @@ from torch.utils.tensorboard import SummaryWriter
 import glob
 import os
 
+# Reinforcement with reward to go
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 if device == "cpu":
