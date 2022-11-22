@@ -17,6 +17,9 @@
 		},
 		{
 			"path": "../DRL_DQN"
+		},
+		{
+			"path": "../DRL_AC"
 		}
 	],
 	"settings": {}

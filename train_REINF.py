@@ -14,7 +14,7 @@ import os
 # Reinforcement with reward to go
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+ 
 if device == "cpu":
     print("gpu is not available")
     print(device)
